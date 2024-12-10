@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "141176886677",
+    "project_id": "jmc-capstone",
+    "storage_bucket": "jmc-capstone.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:141176886677:android:f4b41b41376e06e310929c",
+        "android_client_info": {
+          "package_name": "com.example.jmc"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD0344F0vpqdbgt2XVTPrUjucPTXX3zMfg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
