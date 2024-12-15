@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'dashboard.dart'; // Update the import path if needed
+import '../admin/admin.dart';
+import 'dashboard.dart';
+import 'edit_profile.dart'; // Update the import path if needed
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -22,6 +24,7 @@ class _LoginPageState extends State<LoginPage> {
   );
 
   bool _isLoading = false;
+  bool _isPasswordVisible = false; // Track the visibility of the password
 
   void _login() async {
     setState(() {
@@ -44,11 +47,40 @@ class _LoginPageState extends State<LoginPage> {
         return;
       }
 
-      // Add the logged-in user's UID to `user_devices` in Firebase if it doesn't exist
-      final userDevicesRef = _database.ref('user_devices/${user.uid}');
-      final snapshot = await userDevicesRef.get();
+      // Check user type and profile_setup status
+      final userRef = _database.ref('users/${user.uid}');
+      final snapshot = await userRef.get();
 
-      if (!snapshot.exists) {
+      if (snapshot.exists) {
+        final userData = Map<String, dynamic>.from(snapshot.value as Map);
+
+        final isProfileSetup = userData['profile_setup'] ?? false;
+        final userType = userData['user_type'] ?? 'user';
+
+        if (userType == 'admin') {
+          // Navigate to AdminHomePage for admins
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const AdminHomePage()),
+          );
+          return;
+        }
+
+        if (!isProfileSetup) {
+          // Navigate to EditProfilePage for regular users with incomplete profiles
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const EditProfilePage()),
+          );
+          return;
+        }
+      }
+
+      // Add the logged-in user's UID to `user_devices` if it doesn't exist
+      final userDevicesRef = _database.ref('user_devices/${user.uid}');
+      final deviceSnapshot = await userDevicesRef.get();
+
+      if (!deviceSnapshot.exists) {
         await userDevicesRef.set({});
       }
 
@@ -56,7 +88,7 @@ class _LoginPageState extends State<LoginPage> {
         const SnackBar(content: Text('Login successful!')),
       );
 
-      // Navigate to the Dashboard
+      // Navigate to the Dashboard for regular users
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -129,9 +161,23 @@ class _LoginPageState extends State<LoginPage> {
                 const SizedBox(height: 16),
                 TextField(
                   controller: _passwordController,
+                  obscureText: !_isPasswordVisible, // Toggle visibility
                   decoration: InputDecoration(
                     labelText: 'Password',
                     prefixIcon: const Icon(Icons.lock, color: Colors.green),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _isPasswordVisible
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                        color: Colors.green,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _isPasswordVisible = !_isPasswordVisible;
+                        });
+                      },
+                    ),
                     labelStyle: const TextStyle(color: Colors.green),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12.0),
@@ -142,7 +188,6 @@ class _LoginPageState extends State<LoginPage> {
                       borderSide: const BorderSide(color: Colors.green),
                     ),
                   ),
-                  obscureText: true,
                 ),
                 const SizedBox(height: 20),
                 if (_isLoading)

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({Key? key}) : super(key: key);
@@ -13,6 +14,12 @@ class _RegisterPageState extends State<RegisterPage> {
   final _passwordController = TextEditingController();
   final _auth = FirebaseAuth.instance;
 
+  // Firebase Realtime Database reference with custom URL
+  final _database = FirebaseDatabase(
+    databaseURL:
+        'https://jmc-capstone-default-rtdb.asia-southeast1.firebasedatabase.app',
+  );
+
   bool _isLoading = false;
 
   void _register() async {
@@ -21,10 +28,22 @@ class _RegisterPageState extends State<RegisterPage> {
     });
 
     try {
-      await _auth.createUserWithEmailAndPassword(
+      // Create user in Firebase Auth
+      UserCredential userCredential =
+          await _auth.createUserWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
+
+      // Save additional data to Realtime Database
+      final userId = userCredential.user!.uid;
+      await _database.ref("users/$userId").set({
+        'email': _emailController.text.trim(),
+        'profile_setup': false, // Profile setup flag
+        'user_type': 'user', // Add user type field
+        'created_at': DateTime.now()
+            .toIso8601String(), // Optional: Account creation timestamp
+      });
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Signup successful!')),
